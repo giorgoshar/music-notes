@@ -1,0 +1,1 @@
+Inspired by https://github.com/tsoding/haskell-music/blob/master/Main.hs
