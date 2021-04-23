@@ -29,6 +29,7 @@ def plot_arrays(title, arrays):
 class Envelop:
     # https://en.wikipedia.org/wiki/Envelope_(music)
     # https://www.desmos.com/calculator/nduy9l2pez
+    # https://www.desmos.com/calculator/aj9yw34on9
 
     def __init__(self, attack: float, decay: float, sustain: float, release: float, sampleRate: int):
         self.attack  = attack
@@ -40,7 +41,7 @@ class Envelop:
     def apply(self, sample: list):
         decay_time  = 0.5
 
-        def f(x): return x**(1/3)
+        def f(x): return x**(1/4)
         def f2(x):return x**3
 
         def f3(x, l):
@@ -48,6 +49,9 @@ class Envelop:
 
         def fn_attack(step):
             return min(1, f((1 / (self.attack * len(sample)) ) * step))
+
+        def fn_release(step):
+            return min(1, step / 1000)
 
         def fn_decay(step):
             part1 = -0.9 / decay_time
@@ -62,11 +66,12 @@ class Envelop:
         attack  = list(map(fn_attack,  np.arange(0, len(sample))))
         # decay   = list(map(fn_decay,   np.arange(0, len(sample))))
         # sustain = [fn_sustain() for i in np.arange(0, len(sample))]
-        release = list(reversed(attack))
+        # release = list(reversed(attack))
+        release = list(reversed(list(map(fn_release,  np.arange(0, len(sample))))))
 
         output = []
         for frame, atk, rel in zip(sample, attack, release):
-            output.append((frame * atk * rel) * 1)
+            output.append((frame * atk * rel) * 1) # volume
 
         # plot_arrays('Envelop', [
         #     {'title': 'Sample', 'array': sample, 'color':'red'},
@@ -77,7 +82,6 @@ class Envelop:
 
         return output
 
-
 class Note:
     standardPitch = 440
     def __init__(self, hz: float, sampleRate: int, bpm: float, volume: int):
@@ -85,16 +89,17 @@ class Note:
         self.bpm        = bpm
         self.sampleRate = sampleRate
         self.volume     = volume
+        self.sample     = []
 
     def pulse(self, beat: float) -> list:
-        beat = beat * (60 / self.bpm)
-        sample  = self.freq(self.hz, beat)
-        attack  = list(self.attack(sample))
-        release = list(reversed(attack))
+        beat   = beat * (60 / self.bpm)
+        sample = self.freq(self.hz, beat)
 
-        output = []
-        for frame, atk, rel in zip(sample, attack, release):
-            output.append((frame * atk * rel) * self.volume)
+        # output = []
+        # for frame, atk, rel in zip(sample, attack, release):
+        #     output.append((frame * atk * rel) * self.volume)
+        # self.sample = output
+        self.sample = sample
         return sample
 
     def freq(self, hz: float, seconds: int) -> list:
@@ -108,20 +113,8 @@ class Note:
         sample = self.freq(self.hz, length)
         return list(sample)
 
-    def sinwave(self) -> list:
-        sample = self.pure()
-        return sample[:int(self.sampleRate / self.hz)]
-
-    def attack(self, sample: list) -> list:
-        attack = map(lambda x: min(1, x / 1000), np.arange(0, len(sample)))
-        return list(attack)
-
-    def release(self, sample: list) -> list:
-        release = map(lambda x: min(1, x / 1000), np.arange(0, len(sample)))
-        return list(release)
-
-    def square(self, sample: list) -> list:
-        square = map(lambda x: np.sign(x), sample)
+    def square(self) -> list:
+        square = map(np.sign, self.sample)
         return list(square)
 
     @staticmethod
@@ -135,22 +128,20 @@ bpm = 130
 # A5 = Note(Note.semitone(12), sampleRate, bpm, 1)
 
 t1  = Note(440, sampleRate, bpm, 1)
-env = Envelop(0.05, 0.25, 0.25, 0.25, sampleRate)
-# env.apply(x)
+env = Envelop(0.075, 0.25, 0.25, 0.25, sampleRate)
 
-# plot_arrays('Envelop',[
-#     {'title': 'Sample', 'array': x,  'color': 'red'},
-#     {'title': 'Square', 'array': sq, 'color': 'blue'},
-# ])
+plot_arrays('Envelop',[
+    {'title': 'Sample', 'array': t1.pulse(1),  'color': 'red'},
+    {'title': 'Square', 'array': t1.square(), 'color': 'blue'},
+])
 
-# plot_arrays('Envelop',[
-#     {'title': 'Sample', 'array': t1.pure(1),  'color': 'red'},
-#     {'title': 'Square', 'array': env.apply(t1.pure(1)), 'color': 'blue'},
-# ])
-
+plot_arrays('Envelop',[
+    {'title': 'Sample', 'array': t1.pulse(1),  'color': 'red'},
+    {'title': 'Square', 'array': env.apply(t1.pulse(1)), 'color': 'blue'},
+])
 
 notes = [
-    env.apply(t1.pulse(5))
+    env.apply(t1.pulse(1))
     # t1.sample(5)
     # Note(220, sampleRate, bpm, 1).sample(5)
 ]
