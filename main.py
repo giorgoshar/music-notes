@@ -83,5 +83,7 @@ for note in notes:
     wave += note
 wave = numpy.array(list(wave)).astype(numpy.float32).tobytes()
 
-play_obj = simpleaudio.play_buffer(wave, 1, 4, 44100)
-play_obj.wait_done()
+Utils.plot_slider(A4)
+
+# play_obj = simpleaudio.play_buffer(wave, 1, 4, 44100)
+# play_obj.wait_done()
