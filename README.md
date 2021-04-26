@@ -1,1 +1,2 @@
-Inspired by https://github.com/tsoding/haskell-music/blob/master/Main.hs
+# Python Synthesizer
+## Project is not finished yet
